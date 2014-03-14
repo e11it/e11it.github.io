@@ -1,0 +1,130 @@
+<h1 id="zfs">ZFS</h1>
+
+<hr>
+
+<h2 id="создание-mirror-из-обычного-pool">Создание Mirror из обычного pool</h2>
+
+<hr>
+
+<h4 id="получаем-список-дисков-в-системе">Получаем список дисков в системе:</h4>
+
+<pre class="prettyprint prettyprinted" style=""><code class="language-sh"><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  backups  camcontrol devlist
+</span><span class="pun">&lt;</span><span class="pln">ST3320613AS CC2J</span><span class="pun">&gt;</span><span class="pln">                 at scbus3 target </span><span class="lit">0</span><span class="pln"> lun </span><span class="lit">0</span><span class="pln"> </span><span class="pun">(</span><span class="pln">ada0</span><span class="pun">,</span><span class="pln">pass0</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">&lt;</span><span class="pln">ST3500418AS CC38</span><span class="pun">&gt;</span><span class="pln">                 at scbus3 target </span><span class="lit">1</span><span class="pln"> lun </span><span class="lit">0</span><span class="pln"> </span><span class="pun">(</span><span class="pln">ada1</span><span class="pun">,</span><span class="pln">pass1</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">&lt;</span><span class="typ">Optiarc</span><span class="pln"> DVD RW AD</span><span class="pun">-</span><span class="lit">7260S</span><span class="pln"> </span><span class="lit">1.02</span><span class="pun">&gt;</span><span class="pln">     at scbus4 target </span><span class="lit">0</span><span class="pln"> lun </span><span class="lit">0</span><span class="pln"> </span><span class="pun">(</span><span class="pln">cd0</span><span class="pun">,</span><span class="pln">pass2</span><span class="pun">)</span></code></pre>
+
+<p><a href="http://www.freebsd.org/cgi/man.cgi?query=camcontrol&amp;sektion=8">man camcontrol</a></p>
+
+<p>ada0 - текущий диск в pool <br>
+ada1 - новый диск, надо добавить в его в зеркало к ada0</p>
+
+<h4 id="смотрим-текущую-схему-разбиения-диска">Смотрим текущую схему разбиения диска:</h4>
+
+<pre class="prettyprint prettyprinted" style=""><code class="language-sh"><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">dev  gpart show ada0
+</span><span class="pun">=&gt;</span><span class="pln">       </span><span class="lit">34</span><span class="pln">  </span><span class="lit">625142381</span><span class="pln">  ada0  GPT  </span><span class="pun">(</span><span class="lit">298G</span><span class="pun">)</span><span class="pln">
+         </span><span class="lit">34</span><span class="pln">       </span><span class="lit">1024</span><span class="pln">     </span><span class="lit">1</span><span class="pln">  freebsd</span><span class="pun">-</span><span class="pln">boot  </span><span class="pun">(</span><span class="lit">512K</span><span class="pun">)</span><span class="pln">
+       </span><span class="lit">1058</span><span class="pln">    </span><span class="lit">8388608</span><span class="pln">     </span><span class="lit">2</span><span class="pln">  freebsd</span><span class="pun">-</span><span class="pln">swap  </span><span class="pun">(</span><span class="lit">4.0G</span><span class="pun">)</span><span class="pln">
+    </span><span class="lit">8389666</span><span class="pln">  </span><span class="lit">616752749</span><span class="pln">     </span><span class="lit">3</span><span class="pln">  freebsd</span><span class="pun">-</span><span class="pln">zfs  </span><span class="pun">(</span><span class="lit">294G</span><span class="pun">)</span><span class="pln">
+
+</span><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">dev  gpart show ada1
+</span><span class="pun">=&gt;</span><span class="pln">       </span><span class="lit">63</span><span class="pln">  </span><span class="lit">976773105</span><span class="pln">  ada1  MBR  </span><span class="pun">(</span><span class="lit">466G</span><span class="pun">)</span><span class="pln">
+         </span><span class="lit">63</span><span class="pln">  </span><span class="lit">976773105</span><span class="pln">        </span><span class="pun">-</span><span class="pln"> free </span><span class="pun">-</span><span class="pln">  </span><span class="pun">(</span><span class="lit">466G</span><span class="pun">)</span></code></pre>
+
+<h4 id="выгружаем-в-файл-схему-разбиения-диска-ada0-и-восстанавливаем-ее-на-новый-диск-ada1">Выгружаем в файл схему разбиения диска ada0 и восстанавливаем ее на новый диск ada1:</h4>
+
+<pre class="prettyprint prettyprinted" style=""><code class="language-sh"><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">tmp  gpart backup </span><span class="pun">/</span><span class="pln">dev</span><span class="pun">/</span><span class="pln">ada0 </span><span class="pun">&gt;</span><span class="pln"> ada0</span><span class="pun">.</span><span class="pln">gpt
+</span><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">tmp  ls </span><span class="pun">-</span><span class="pln">la
+</span><span class="pun">-</span><span class="pln">rw</span><span class="pun">-</span><span class="pln">r</span><span class="pun">--</span><span class="pln">r</span><span class="pun">--</span><span class="pln">   </span><span class="lit">1</span><span class="pln"> root  wheel  </span><span class="lit">142</span><span class="pln"> </span><span class="lit">14</span><span class="pln"> </span><span class="pun">мар</span><span class="pln"> </span><span class="lit">12</span><span class="pun">:</span><span class="lit">29</span><span class="pln"> ada0</span><span class="pun">.</span><span class="pln">gpt
+</span><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">tmp  cat ada0</span><span class="pun">.</span><span class="pln">gpt 
+GPT </span><span class="lit">128</span><span class="pln">
+</span><span class="lit">1</span><span class="pln">   freebsd</span><span class="pun">-</span><span class="pln">boot        </span><span class="lit">34</span><span class="pln">      </span><span class="lit">1024</span><span class="pln"> gptboot0 
+</span><span class="lit">2</span><span class="pln">   freebsd</span><span class="pun">-</span><span class="pln">swap      </span><span class="lit">1058</span><span class="pln">   </span><span class="lit">8388608</span><span class="pln"> swap0 
+</span><span class="lit">3</span><span class="pln">    freebsd</span><span class="pun">-</span><span class="pln">zfs   </span><span class="lit">8389666</span><span class="pln"> </span><span class="lit">616752749</span><span class="pln"> zfs0 
+</span><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">tmp  gpart restore </span><span class="pun">-</span><span class="pln">F </span><span class="pun">/</span><span class="pln">dev</span><span class="pun">/</span><span class="pln">ada1 </span><span class="pun">&lt;</span><span class="pln"> ada0</span><span class="pun">.</span><span class="pln">gpt 
+</span><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">tmp  gpart show </span><span class="pun">/</span><span class="pln">dev</span><span class="pun">/</span><span class="pln">ada1
+</span><span class="pun">=&gt;</span><span class="pln">       </span><span class="lit">34</span><span class="pln">  </span><span class="lit">976773101</span><span class="pln">  ada1  GPT  </span><span class="pun">(</span><span class="lit">466G</span><span class="pun">)</span><span class="pln">
+         </span><span class="lit">34</span><span class="pln">       </span><span class="lit">1024</span><span class="pln">     </span><span class="lit">1</span><span class="pln">  freebsd</span><span class="pun">-</span><span class="pln">boot  </span><span class="pun">(</span><span class="lit">512K</span><span class="pun">)</span><span class="pln">
+       </span><span class="lit">1058</span><span class="pln">    </span><span class="lit">8388608</span><span class="pln">     </span><span class="lit">2</span><span class="pln">  freebsd</span><span class="pun">-</span><span class="pln">swap  </span><span class="pun">(</span><span class="lit">4.0G</span><span class="pun">)</span><span class="pln">
+    </span><span class="lit">8389666</span><span class="pln">  </span><span class="lit">616752749</span><span class="pln">     </span><span class="lit">3</span><span class="pln">  freebsd</span><span class="pun">-</span><span class="pln">zfs  </span><span class="pun">(</span><span class="lit">294G</span><span class="pun">)</span><span class="pln">
+  </span><span class="lit">625142415</span><span class="pln">  </span><span class="lit">351630720</span><span class="pln">        </span><span class="pun">-</span><span class="pln"> free </span><span class="pun">-</span><span class="pln">  </span><span class="pun">(</span><span class="lit">168G</span><span class="pun">)</span></code></pre>
+
+<p>Так же необходимо получить gptid для ada1p3 с помощью команды <code>gpart list -a</code>. В наешм случае:</p>
+
+<blockquote>
+  <p>ada1p3 — gptid: f509fc5d-ab52-11e3-9410-e0cb4e5fba3f</p>
+</blockquote>
+
+<p>Или с помощью <code>glabel status</code></p>
+
+<pre class="prettyprint prettyprinted" style=""><code class="language-sh"><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">~</span><span class="pln">   glabel status 
+                                      </span><span class="typ">Name</span><span class="pln">  </span><span class="typ">Status</span><span class="pln">  </span><span class="typ">Components</span><span class="pln">
+                              gpt</span><span class="pun">/</span><span class="pln">gptboot0     N</span><span class="pun">/</span><span class="pln">A  ada0p1
+gptid</span><span class="pun">/</span><span class="lit">79c73e44</span><span class="pun">-</span><span class="lit">9343</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="pln">a53c</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f     N</span><span class="pun">/</span><span class="pln">A  ada0p1
+                                 gpt</span><span class="pun">/</span><span class="pln">swap0     N</span><span class="pun">/</span><span class="pln">A  ada0p2
+gptid</span><span class="pun">/</span><span class="lit">7a1378a0</span><span class="pun">-</span><span class="lit">9343</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="pln">a53c</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f     N</span><span class="pun">/</span><span class="pln">A  ada0p3
+gptid</span><span class="pun">/</span><span class="pln">f505c4d4</span><span class="pun">-</span><span class="pln">ab52</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="lit">9410</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f     N</span><span class="pun">/</span><span class="pln">A  ada1p2
+gptid</span><span class="pun">/</span><span class="pln">f509fc5d</span><span class="pun">-</span><span class="pln">ab52</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="lit">9410</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f     N</span><span class="pun">/</span><span class="pln">A  ada1p3
+gptid</span><span class="pun">/</span><span class="pln">f504d8e0</span><span class="pun">-</span><span class="pln">ab52</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="lit">9410</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f     N</span><span class="pun">/</span><span class="pln">A  ada1p1</span></code></pre><div class="se-section-delimiter"></div>
+
+<h4 id="добавляем-диск-ada1p3-к-ada0p3-используюя-gptid">Добавляем диск ada1p3 к ada0p3 используюя gptid</h4>
+
+<p>Описание команды:</p>
+
+<blockquote>
+  <p>zpool attach tank /dev/gptid/[gptid_of_the_existing_disk] /dev/gptid/[gptid_of_the_new_partition]</p>
+</blockquote><div class="se-section-delimiter"></div>
+
+<pre class="prettyprint prettyprinted" style=""><code class="language-sh"><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">dev  zpool attach zroot gptid</span><span class="pun">/</span><span class="lit">7a1378a0</span><span class="pun">-</span><span class="lit">9343</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="pln">a53c</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f gptid</span><span class="pun">/</span><span class="pln">f509fc5d</span><span class="pun">-</span><span class="pln">ab52</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="lit">9410</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f
+</span><span class="typ">Make</span><span class="pln"> sure to wait </span><span class="kwd">until</span><span class="pln"> resilver is </span><span class="kwd">done</span><span class="pln"> before rebooting</span><span class="pun">.</span><span class="pln">
+
+</span><span class="typ">If</span><span class="pln"> you boot from pool </span><span class="str">'zroot'</span><span class="pun">,</span><span class="pln"> you may need to update
+boot code on newly attached disk </span><span class="str">'gptid/f509fc5d-ab52-11e3-9410-e0cb4e5fba3f'</span><span class="pun">.</span><span class="pln">
+
+</span><span class="typ">Assuming</span><span class="pln"> you use GPT partitioning and </span><span class="str">'da0'</span><span class="pln"> is your new boot disk
+you may use the following command</span><span class="pun">:</span><span class="pln">
+
+    gpart bootcode </span><span class="pun">-</span><span class="pln">b </span><span class="pun">/</span><span class="pln">boot</span><span class="pun">/</span><span class="pln">pmbr </span><span class="pun">-</span><span class="pln">p </span><span class="pun">/</span><span class="pln">boot</span><span class="pun">/</span><span class="pln">gptzfsboot </span><span class="pun">-</span><span class="pln">i </span><span class="lit">1</span><span class="pln"> da0</span></code></pre>
+
+<h4 id="проверяем-статус-pool">Проверяем статус pool</h4>
+
+<pre class="prettyprint prettyprinted" style=""><code class="language-sh"><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">dev  zpool status
+  pool</span><span class="pun">:</span><span class="pln"> zroot
+ state</span><span class="pun">:</span><span class="pln"> ONLINE
+status</span><span class="pun">:</span><span class="pln"> </span><span class="typ">One</span><span class="pln"> or more devices is currently being resilvered</span><span class="pun">.</span><span class="pln">  </span><span class="typ">The</span><span class="pln"> pool will
+    </span><span class="kwd">continue</span><span class="pln"> to </span><span class="kwd">function</span><span class="pun">,</span><span class="pln"> possibly </span><span class="kwd">in</span><span class="pln"> a degraded state</span><span class="pun">.</span><span class="pln">
+action</span><span class="pun">:</span><span class="pln"> </span><span class="typ">Wait</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> the resilver to complete</span><span class="pun">.</span><span class="pln">
+  scan</span><span class="pun">:</span><span class="pln"> resilver </span><span class="kwd">in</span><span class="pln"> progress since </span><span class="typ">Fri</span><span class="pln"> </span><span class="typ">Mar</span><span class="pln"> </span><span class="lit">14</span><span class="pln"> </span><span class="lit">13</span><span class="pun">:</span><span class="lit">01</span><span class="pun">:</span><span class="lit">32</span><span class="pln"> </span><span class="lit">2014</span><span class="pln">
+        </span><span class="lit">951M</span><span class="pln"> scanned out of </span><span class="lit">4</span><span class="pun">,</span><span class="lit">02G</span><span class="pln"> at </span><span class="lit">34</span><span class="pun">,</span><span class="lit">0M</span><span class="pun">/</span><span class="pln">s</span><span class="pun">,</span><span class="pln"> </span><span class="lit">0h1m</span><span class="pln"> to go
+        </span><span class="lit">951M</span><span class="pln"> resilvered</span><span class="pun">,</span><span class="pln"> </span><span class="lit">23</span><span class="pun">,</span><span class="lit">08</span><span class="pun">%</span><span class="pln"> </span><span class="kwd">done</span><span class="pln">
+config</span><span class="pun">:</span><span class="pln">
+
+    NAME                                            STATE     READ WRITE CKSUM
+    zroot                                           ONLINE       </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">
+      mirror</span><span class="pun">-</span><span class="lit">0</span><span class="pln">                                      ONLINE       </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">
+        gptid</span><span class="pun">/</span><span class="lit">7a1378a0</span><span class="pun">-</span><span class="lit">9343</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="pln">a53c</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f  ONLINE       </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">
+        gptid</span><span class="pun">/</span><span class="pln">f509fc5d</span><span class="pun">-</span><span class="pln">ab52</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="lit">9410</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f  ONLINE       </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">  </span><span class="pun">(</span><span class="pln">resilvering</span><span class="pun">)</span><span class="pln">
+
+errors</span><span class="pun">:</span><span class="pln"> </span><span class="typ">No</span><span class="pln"> known data errors</span></code></pre>
+
+<h4 id="не-забываем-записать-загрузчик-на-новый-диск">Не забываем записать загрузчик на новый диск:</h4>
+
+<pre class="prettyprint prettyprinted" style=""><code class="language-sh"><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">dev  gpart bootcode </span><span class="pun">-</span><span class="pln">b </span><span class="pun">/</span><span class="pln">boot</span><span class="pun">/</span><span class="pln">pmbr </span><span class="pun">-</span><span class="pln">p </span><span class="pun">/</span><span class="pln">boot</span><span class="pun">/</span><span class="pln">gptzfsboot </span><span class="pun">-</span><span class="pln">i </span><span class="lit">1</span><span class="pln"> ada1
+bootcode written to ada1</span></code></pre>
+
+<h4 id="в-результате-имеем-mirror">В результате имеем mirror</h4>
+
+<pre class="prettyprint prettyprinted" style=""><code class="language-sh"><span class="typ">AstriMosc</span><span class="pln"> </span><span class="pun">➜</span><span class="pln">  </span><span class="pun">/</span><span class="pln">dev  zpool status     
+  pool</span><span class="pun">:</span><span class="pln"> zroot
+ state</span><span class="pun">:</span><span class="pln"> ONLINE
+  scan</span><span class="pun">:</span><span class="pln"> scrub </span><span class="kwd">in</span><span class="pln"> progress since </span><span class="typ">Fri</span><span class="pln"> </span><span class="typ">Mar</span><span class="pln"> </span><span class="lit">14</span><span class="pln"> </span><span class="lit">13</span><span class="pun">:</span><span class="lit">23</span><span class="pun">:</span><span class="lit">35</span><span class="pln"> </span><span class="lit">2014</span><span class="pln">
+        </span><span class="lit">3</span><span class="pun">,</span><span class="lit">12M</span><span class="pln"> scanned out of </span><span class="lit">4</span><span class="pun">,</span><span class="lit">02G</span><span class="pln"> at </span><span class="lit">798K</span><span class="pun">/</span><span class="pln">s</span><span class="pun">,</span><span class="pln"> </span><span class="lit">1h28m</span><span class="pln"> to go
+        </span><span class="lit">0</span><span class="pln"> repaired</span><span class="pun">,</span><span class="pln"> </span><span class="lit">0</span><span class="pun">,</span><span class="lit">08</span><span class="pun">%</span><span class="pln"> </span><span class="kwd">done</span><span class="pln">
+config</span><span class="pun">:</span><span class="pln">
+
+    NAME                                            STATE     READ WRITE CKSUM
+    zroot                                           ONLINE       </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">
+      mirror</span><span class="pun">-</span><span class="lit">0</span><span class="pln">                                      ONLINE       </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">
+        gptid</span><span class="pun">/</span><span class="lit">7a1378a0</span><span class="pun">-</span><span class="lit">9343</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="pln">a53c</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f  ONLINE       </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">
+        gptid</span><span class="pun">/</span><span class="pln">f509fc5d</span><span class="pun">-</span><span class="pln">ab52</span><span class="pun">-</span><span class="lit">11e3</span><span class="pun">-</span><span class="lit">9410</span><span class="pun">-</span><span class="pln">e0cb4e5fba3f  ONLINE       </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">     </span><span class="lit">0</span><span class="pln">
+
+errors</span><span class="pun">:</span><span class="pln"> </span><span class="typ">No</span><span class="pln"> known data errors</span></code></pre>
