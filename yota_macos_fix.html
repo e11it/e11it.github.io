@@ -1,22 +1,24 @@
 <p>Сначала выдали модем Wi-Fi Модем Yota, а потом lu150 <br>
 Но он не захотел работать на Mac OS X(после того как драйвера поставил Wi-Fi Модем Yota).</p>
 
-<h1 id="решение">Решение:</h1><div class="se-section-delimiter"></div>
+<h1 id="решение">Решение:</h1>
 
-<h2 id="remove-drivers">remove drivers</h2>
+<p>Отключить yota modem.</p><div class="se-section-delimiter"></div>
+
+<h2 id="удаляем-драйвера">Удаляем драйвера</h2>
 
 <pre><code>cd /System/Library/Extensions
 sudo kextunload /System/Library/Extensions/Yota1KYDriver.kext
 sudo rm -rf /System/Library/Extensions/Yota1KYDriver.kext
 </code></pre><div class="se-section-delimiter"></div>
 
-<h2 id="rebuild-cache">rebuild cache</h2>
+<h2 id="ребилдим-кеш">Ребилдим кеш</h2>
 
 <pre><code>sudo kextcache -system-prelinked-kernel
 sudo kextcache -system-caches
 </code></pre><div class="se-section-delimiter"></div>
 
-<h2 id="unistall-yota-access">Unistall yota access</h2>
+<h2 id="удаляем-yota-access">Удаляем yota access</h2>
 
 <p>run applescript:</p>
 
