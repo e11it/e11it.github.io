@@ -8,6 +8,8 @@ tags: [nifi,recovery]
 
 Очень помогла статья: [Apache Nifi Sensitive Value Encryption](https://www.dreamincode.net/forums/blog/324/entry-5080-apache-nifi-sensitive-value-encryption/)
 
+<!--truncate-->
+
 Все описанное работает, если в nifi.properites:
 nifi.sensitive.props.algorithm=PBEWITHMD5AND256BITAES-CBC-OPENSSL
 
