@@ -8,8 +8,8 @@ const darkCodeTheme = require('prism-react-renderer/themes/dracula');
 const config = {
   title: 'e11it home',
   tagline: 'e11it home are cool',
-  url: 'https://e11it.github.io/',
-  baseUrl: '/im/',
+  url: 'https://e11it.github.io',
+  baseUrl,
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',

@@ -1,4 +1,4 @@
-# Kafka в одной ORG_NAME
+# Kafka. От источника до архивного хранилища
 
 ## Начало
 
@@ -222,6 +222,8 @@ auth:
    proxy_set_header X-Service "kafka-rest";
  }
 ```
+
+Сам проект: [ra](https://github.com/e11it/ra).
 
 Kafka Rest и Schema Registry работают в HA режими и позволяют горизонтально масштабироваться.
 
