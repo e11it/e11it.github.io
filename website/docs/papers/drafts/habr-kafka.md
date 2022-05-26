@@ -477,7 +477,6 @@ select *,n_msg-(_max - _min)-1 as delta from stat where  n_msg-(_max - _min) <> 
 ![](habr_kafka/NIFI.Hbase.1v.png)
 
 1. Таблица в Hbase с данными(kafka.value в avro), и ключом: `${kafka.topic}_${kafka.partition}_${kafka.offset}`.
-
 1.2 внешняя таблица в Hive над ней:
 ```sql
 CREATE EXTERNAL TABLE tst.hbase_table_1
