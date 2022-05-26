@@ -460,7 +460,7 @@ select *,n_msg-(_max - _min)-1 as delta from stat where  n_msg-(_max - _min) <> 
    * prod_to_test_topics_re: `^$` - маска для передачи топиков с прода на тест
    
 Сама група выглядит так:
-[](habr_kafka/nifi_to_db.png)
+![NIFI TO DB](habr_kafka/nifi_to_db.png)
 
 
 ### Сырой слой в Hadoop
