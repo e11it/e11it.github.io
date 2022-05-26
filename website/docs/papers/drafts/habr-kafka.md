@@ -84,6 +84,8 @@ Zookeeper начиная с версии 3.6 [нативно](https://github.com
 - [статус и метрики контейнеров docker](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/docker) для KafkaRest,SchemaRegistry,NGiNX,RA, 
 - [срок до истечения сертфиикатов](https://github.com/influxdata/telegraf/tree/master/plugins/inputs/x509_cert)
 
+Про мониторинг Zookeeper отлично все собрано у Altinity: [Zookeeper monitoring](https://kb.altinity.com/altinity-kb-setup-and-maintenance/altinity-kb-zookeeper/zookeeper-monitoring/)
+
 ### Kafka REST
 
 Для KafkaREST мы собираем статитстику по http кодам ответов с помошью модуля nginx [VTS](https://github.com/vozlt/nginx-module-vts) в разрезе `dataset name`(см. солгашение об именовании топиков).
