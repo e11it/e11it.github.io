@@ -459,7 +459,7 @@ select *,n_msg-(_max - _min)-1 as delta from stat where  n_msg-(_max - _min) <> 
    * test_to_prod_topics_re: `^$` - маска для передачи топиков с теста на прод
    * prod_to_test_topics_re: `^$` - маска для передачи топиков с прода на тест
    
-Сама група выглядит так:
+Група в NIFI выглядит так:
 ![NIFI TO DB](habr_kafka/nifi_to_db.png)
 
 
