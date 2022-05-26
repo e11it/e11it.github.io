@@ -448,16 +448,16 @@ select *,n_msg-(_max - _min)-1 as delta from stat where  n_msg-(_max - _min) <> 
     * kafka-clusters
 
 4. Заполнить переменные в parameters: 
-   * 000_0_group_id: имя группы(service-prod.nifi-000-0.sre.<group_name>)
+   * 000_0_group_id: имя группы (`service-prod.nifi-000-0.sre.<group_name>`)
    * 000_0_topic_name_format: names
    * 000_0_topic_names: список топиков
-   * 000_1_group_id имя группы(
-   * 000_1_topic_names список топиков
-   * prod_database_connection_url jdbc:oracle:thin:@<hostname>:1521/<service_name>
-   * test_database_connection_url jdbc:postgresql://<hostanme>:5432/<db>?ApplicationName=nifi-000-0-<group_name>
-   * test_to_prod_topics_re ^$ - маска для передачи топиков с теста на прод
-   * prod_to_test_topics_rs ^$ - маска для передачи топиков с прода на тест
-    
+   * 000_1_group_id: имя группы (`service-prod.nifi-000-0.sre.<group_name>`)
+   * 000_1_topic_names: список топиков
+   * prod_database_connection_url: `jdbc:oracle:thin:@<hostname>:1521/<service_name>`
+   * test_database_connection_url: `jdbc:postgresql://<hostanme>:5432/<db>?ApplicationName=nifi-000-0-<group_name>`
+   * test_to_prod_topics_re: `^$` - маска для передачи топиков с теста на прод
+   * prod_to_test_topics_re: `^$` - маска для передачи топиков с прода на тест
+   
 Сама група выглядит так:
 [](habr_kafka/nifi_to_db.png)
 
