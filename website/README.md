@@ -39,3 +39,9 @@ $ GIT_USER=<Your GitHub username> yarn deploy
 ```
 
 If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
+
+To render PDF run:
+
+```sh
+npx mr-pdf --initialDocURLs="https://e11it.github.io/docs/papers/drafts/habr-kafka" --contentSelector="article" --paginationSelector=".pagination-nav__item--next > a" --excludeSelectors=".margin-vert--xl a"
+```
